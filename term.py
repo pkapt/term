@@ -1,7 +1,7 @@
-import sys,os
 import curses
 
 CTL_N = 14
+CTL_Q = 17
 CTL_W = 23
 
 def configure_window(stdscr, windows_queue, n):
@@ -73,26 +73,11 @@ def handle_keypress(key, stdscr, windows_queue):
 def draw_menu(stdscr):
     k = 0
 
-    # Clear and refresh the screen for a blank canvas
-    stdscr.clear()
-    stdscr.refresh()
-
-    # Start colors in curses
-    curses.start_color()
-    curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
-
-    height, width = stdscr.getmaxyx()
     windows_queue = []
-    box1 = stdscr.subwin(height, width, 0, 0)
-    box1.box()
-    box1.touchwin()
-    box1.refresh()
-    windows_queue.append(box1)
+    configure_window(stdscr, windows_queue, 1)
 
     # # Loop where k is the last character pressed
-    while (k != ord('q')):
+    while (k != CTL_Q):
         handle_keypress(k, stdscr, windows_queue)
         k = stdscr.getch()
 
