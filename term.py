@@ -9,9 +9,7 @@ def configure_window(stdscr, windows_queue, n):
     height, width = stdscr.getmaxyx()
 
     def one():
-        win_width = int(width/2)
-        windows_queue.append(stdscr.subwin(height, win_width, 0, 0))
-        windows_queue.append(stdscr.subwin(height, win_width, 0, win_width))
+        windows_queue.append(stdscr.subwin(height, width, 0, 0))
 
     def two():
         win_width = int(width/2)
@@ -45,10 +43,11 @@ def configure_window(stdscr, windows_queue, n):
         4 : four
     }
 
-    handler_func = win_handler_table(n)
+    handler_func = win_handler_table[n]
     if callable(handler_func):
+        stdscr.clear()
         handler_func()
-    refresh_all()
+        refresh_all()
 
 def add_window(stdscr, windows_queue):
     len_q = len(windows_queue)
@@ -66,7 +65,10 @@ keypress_callback_table = {
 }
 
 def handle_keypress(key, stdscr, windows_queue):
-    keypress_callback_table[key](stdscr, windows_queue)
+    try:
+        keypress_callback_table[key](stdscr, windows_queue)
+    except KeyError:
+        pass
 
 def draw_menu(stdscr):
     k = 0
@@ -91,55 +93,8 @@ def draw_menu(stdscr):
 
     # # Loop where k is the last character pressed
     while (k != ord('q')):
-
-        # Initialization
-        height, width = stdscr.getmaxyx()
-
         handle_keypress(k, stdscr, windows_queue)
-
-        if k == CTL_N:
-            q_len = len(windows_queue)
-            if q_len < 4:
-                windows_queue = []
-                stdscr.clear()
-            if q_len == 1:
-                win_width = int(width/2)
-                windows_queue.append(stdscr.subwin(height, win_width, 0, 0))
-                windows_queue.append(stdscr.subwin(height, win_width, 0, win_width))
-            elif q_len == 2:
-                win_width = int(width/3)
-                windows_queue.append(stdscr.subwin(height, win_width, 0, 0))
-                windows_queue.append(stdscr.subwin(height, win_width, 0, win_width))
-                windows_queue.append(stdscr.subwin(height, win_width, 0, win_width*2))
-            elif q_len == 3:
-                win_width = int(width/2)
-                win_height = int(height/2)
-                windows_queue.append(stdscr.subwin(win_height, win_width, 0, 0))
-                windows_queue.append(stdscr.subwin(win_height, win_width, 0, win_width))
-                windows_queue.append(stdscr.subwin(win_height, win_width, win_height, 0))
-                windows_queue.append(stdscr.subwin(win_height, win_width, win_height, win_width))
-                pass
-            else:
-                print('max number of windows reached')
-
-            for window in windows_queue:
-                window.box()
-                window.touchwin()
-                window.refresh()
-        
         k = stdscr.getch()
-        
-        
-    #     for win in windows_queue:
-    #         win.box()
-    #         win.touchwin()
-    #         win.refresh()
-
-    #     # Refresh the screen
-    #     stdscr.refresh()
-
-    #     # Wait for next input
-    #     k = stdscr.getch()
 
 def main():
     curses.wrapper(draw_menu)
