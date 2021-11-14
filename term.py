@@ -4,9 +4,33 @@ CTL_N = 14
 CTL_Q = 17
 CTL_W = 23
 
+
+COLOR_CY_BL = 1
+COLOR_BL_WH = 2
+
+class CursesString():
+    def __init__(self, stdscr, text, color, x, y, fill=None):
+        self.text = text
+        self.color = color
+        self.x = x
+        self.y = y
+        self.fill = fill
+        height, width = stdscr.getmaxyx()
+        if y < 0:
+            y = height + y
+        if x < 0:
+            x = width + x
+        stdscr.attron(curses.color_pair(self.color))
+        stdscr.addstr(y, x, self.text)
+        if fill == -1:
+            stdscr.addstr(y, len(self.text), " " * (width - len(self.text) - 1))
+        stdscr.attroff(curses.color_pair(self.color))
+        stdscr.refresh()
+
 def configure_window(stdscr, windows_queue, n):
     windows_queue.clear()
     height, width = stdscr.getmaxyx()
+    height = height-1
 
     def one():
         windows_queue.append(stdscr.subwin(height, width, 0, 0))
@@ -70,8 +94,14 @@ def handle_keypress(key, stdscr, windows_queue):
     except KeyError:
         pass
 
+def init_colors():
+    curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
+
 def draw_menu(stdscr):
     k = 0
+
+    init_colors()
 
     windows_queue = []
     configure_window(stdscr, windows_queue, 1)
@@ -79,6 +109,14 @@ def draw_menu(stdscr):
     # # Loop where k is the last character pressed
     while (k != CTL_Q):
         handle_keypress(k, stdscr, windows_queue)
+
+        CursesString(
+            stdscr,
+            text = "EXIT -> ctl+q | NEW WIN -> ctl+n | DEL WIN -> ctl+w",
+            color = COLOR_BL_WH,
+            x = 0, y = -1, fill = -1
+        )
+
         k = stdscr.getch()
 
 def main():

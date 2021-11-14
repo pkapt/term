@@ -79,7 +79,7 @@ def draw_menu(stdscr):
         stdscr.addstr(start_y + 5, start_x_keystr, keystr)
         stdscr.move(cursor_y, cursor_x)
 
-        stdscr.border(0)
+        # stdscr.border(0)
  
         # Refresh the screen
         stdscr.refresh()
