@@ -1,5 +1,6 @@
 import curses
 from collections import OrderedDict
+from enum import Enum
 
 CTL_N = 14
 CTL_Q = 17
@@ -56,17 +57,20 @@ class Window():
         self.win = stdscr.subwin(lines, cols, y, x)
         self.id = id
         self._win_id_vis = win_id_vis
-        self._refresh()
+        self.refresh()
     
     def resize(self, lines, cols, y, x):
         self.win = self.stdscr.subwin(lines, cols, y, x)
-        self._refresh()
+        self.refresh()
         return self
         
-    def _refresh(self):
+    def refresh(self, header_highlight_vis=False):
         self.win.box()
         if self._win_id_vis == True:
-            CursesString(self.win, str(self.id), COLOR_CY_BL, 1, 1)
+            if header_highlight_vis == True:
+                CursesString(self.win, str(self.id), COLOR_CY_BL, 1, 1)
+            else:
+                CursesString(self.win, str(self.id), COLOR_BL_WH, 1, 1, -1)
         self.win.touchwin()
         self.win.refresh()
 
@@ -90,6 +94,7 @@ class WindowsManager():
         self.stdscr = stdscr
         self._height, self._width = self.stdscr.getmaxyx()
         self._height -= STATUS_BAR_OFFSET_Y
+        self._init_directional_context_handlers()
 
     def add_window(self):
         if len(self._windows) < self.MAX_WINDOWS:
@@ -99,6 +104,11 @@ class WindowsManager():
 
     def del_current_window():
         pass
+
+    def refresh_all(self):
+        for window in self._windows:
+            if self._active_window == window.id:
+                window.refresh(header_highlight_vis=True)
 
     def _configure_windows(self, n):
         def one():
@@ -136,17 +146,84 @@ class WindowsManager():
             self.stdscr.clear()
             handler_func()
 
-    def give_context_up():
-        pass
+    class Directions(Enum):
+        UP = CTL_UP,
+        DOWN = CTL_DOWN,
+        LEFT = 3,
+        RIGHT = 4
+    
+    def _set_active_window(self, win_id):
+        self._active_window = win_id
+        try:
+            self._windows[win_id].set_active
+        except KeyError as e:
+            raise(e)
 
-    def give_context_down():
-        pass
+    def _init_directional_context_handlers(self):
+        def one(self, dir):
+            pass
+                
+        def two(self, dir):
+            if dir == self.Directions.RIGHT:
+                if self._active_window == 1:
+                    return self._set_active_window(self._active_window + 1)
+            elif dir == self.Directions.LEFT:
+                if self._active_window == 2:
+                    return self._set_active_window(self._active_window - 1)
 
-    def give_context_left():
-        pass
+        def three(self, dir):
+            if dir == self.Directions.RIGHT:
+                if self._active_window < 2:
+                    self._active_window += 1
+                    return self._set_active_window(self._active_window + 1)
+            elif dir == self.Directions.LEFT:
+                if self._active_window > 0:
+                    return self._set_active_window(self._active_window - 1)
 
-    def give_context_right():
-        pass
+        def four(self, dir):
+            if dir == self.Directions.RIGHT:
+                if self._active_window == 1 or self._active_window == 3:
+                    return self._set_active_window(self._active_window + 1)
+            elif dir == self.Directions.LEFT:
+                if self._active_window == 2 or self._active_window == 4:
+                    return self._set_active_window(self._active_window - 1)
+            if dir == self.Directions.UP:
+                if self._active_window == 1 or self._active_window == 2:
+                    return self._set_active_window(self._active_window + 2)
+            if dir == self.Directions.DOWN:
+                if self._active_window == 3 or self._active_window == 4:
+                    return self._set_active_window(self._active_window - 2)
+
+        self._directional_context_give_handlers = {
+            1 : one,
+            2 : two,
+            3 : three,
+            4 : four
+        }
+
+    def give_context_up(self):
+        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
+        res = directional_context_give_func(self, self.Directions.UP)
+        if res != None:
+            self.refresh_all
+
+    def give_context_down(self):
+        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
+        res = directional_context_give_func(self, self.Directions.DOWN)
+        if res != None:
+            self.refresh_all
+
+    def give_context_left(self):
+        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
+        res = directional_context_give_func(self, self.Directions.LEFT)
+        if res != None:
+            self.refresh_all
+
+    def give_context_right(self):
+        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
+        res = directional_context_give_func(self, self.Directions.RIGHT)
+        if res != None:
+            self.refresh_all
 
 # make this big so everyone knows it's a singleton
 WIN_MANAGER = WindowsManager(win_id_vis=True)
@@ -154,10 +231,10 @@ WIN_MANAGER = WindowsManager(win_id_vis=True)
 keypress_callback_table = {
     CTL_N     : WIN_MANAGER.add_window,
     CTL_W     : None,
-    CTL_UP    : None,
-    CTL_DOWN  : None,
-    CTL_LEFT  : None,
-    CTL_RIGHT : None,
+    CTL_UP    : WIN_MANAGER.give_context_up,
+    CTL_DOWN  : WIN_MANAGER.give_context_down,
+    CTL_LEFT  : WIN_MANAGER.give_context_left,
+    CTL_RIGHT : WIN_MANAGER.give_context_right,
 }
 
 def handle_keypress(key):
@@ -167,8 +244,6 @@ def handle_keypress(key):
             handler_func()
     except KeyError:
         pass
-
-
 
 def draw_menu(stdscr):
     k = 0
