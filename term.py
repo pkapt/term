@@ -12,7 +12,7 @@ CTL_RIGHT = 444
 
 STATUS_BAR_OFFSET_Y = 1
 
-STATUS_BAR_STR = "EXIT -> ctl+q | NEW WIN -> ctl+n | DEL WIN -> ctl+w"
+STATUS_BAR_STR = "EXIT -> ctl+q | NEW WIN -> ctl+n | DEL WIN -> ctl+w | EDIT CONFIG -> ctl+g"
 
 COLOR_CY_BL = 1
 COLOR_BL_WH = 2
@@ -28,27 +28,29 @@ class CursesString():
     @param x, y coordinates of string (can negative index)
     @param fill fill the rest of the line with spaces
     '''
-    def __init__(self, window, text, color, x, y, fill=None):
+    def __init__(self, window, text, color, x, y, fill=None, vis=True):
         self.text = text
         self.color = color
         self.x = x
         self.y = y
         self.fill = fill
         self.window = window
+        self.vis = vis
         self._render()
     
     def _render(self):
-        height, width = self.window.getmaxyx()
-        if self.y < 0:
-            self.y = height + self.y
-        if self.x < 0:
-            self.x = width + self.x
-        self.window.attron(curses.color_pair(self.color))
-        self.window.addstr(self.y, self.x, self.text)
-        if self.fill == -1:
-            self.window.addstr(self.y, len(self.text), " " * (width - len(self.text) - 1))
-        self.window.attroff(curses.color_pair(self.color))
-        self.window.refresh()
+        if self.vis:
+            height, width = self.window.getmaxyx()
+            if self.y < 0:
+                self.y = height + self.y
+            if self.x < 0:
+                self.x = width + self.x
+            self.window.attron(curses.color_pair(self.color))
+            self.window.addstr(self.y, self.x, self.text)
+            if self.fill == -1:
+                self.window.addstr(self.y, len(self.text)+self.x, " " * 10)
+            self.window.attroff(curses.color_pair(self.color))
+            self.window.refresh()
 
 class Window():
     # TODO: add handling for port
@@ -64,13 +66,14 @@ class Window():
         self.refresh()
         return self
         
+    # TODO clean up string show logic somehow instead of just a rogue if statement
     def refresh(self, header_highlight_vis=False):
         self.win.box()
         if self._win_id_vis == True:
             if header_highlight_vis == True:
-                CursesString(self.win, str(self.id), COLOR_CY_BL, 1, 1)
-            else:
                 CursesString(self.win, str(self.id), COLOR_BL_WH, 1, 1, -1)
+            else:
+                CursesString(self.win, str(self.id), COLOR_CY_BL, 1, 1, -1)
         self.win.touchwin()
         self.win.refresh()
 
@@ -84,7 +87,7 @@ class WindowsManager():
 
     def __init__(self, win_id_vis=False):
         self._windows = {}
-        self._active_window = 0
+        self._active_window = 1
         self._win_id_vis = win_id_vis
     
     '''
@@ -105,10 +108,12 @@ class WindowsManager():
     def del_current_window():
         pass
 
-    def refresh_all(self):
+    def _refresh_all(self):
         for window in self._windows:
-            if self._active_window == window.id:
-                window.refresh(header_highlight_vis=True)
+            if self._active_window == self._windows[window].id:
+                self._windows[window].refresh(header_highlight_vis=True)
+            else:
+                self._windows[window].refresh()
 
     def _configure_windows(self, n):
         def one():
@@ -145,6 +150,7 @@ class WindowsManager():
         if callable(handler_func):
             self.stdscr.clear()
             handler_func()
+            self._refresh_all()
 
     class Directions(Enum):
         UP = CTL_UP,
@@ -154,16 +160,16 @@ class WindowsManager():
     
     def _set_active_window(self, win_id):
         self._active_window = win_id
-        try:
-            self._windows[win_id].set_active
-        except KeyError as e:
-            raise(e)
+        return win_id
 
     def _init_directional_context_handlers(self):
-        def one(self, dir):
+        '''
+        @descr handle_n() corresponds to the current number of windows
+        '''
+        def handle_one(self, dir):
             pass
                 
-        def two(self, dir):
+        def handle_two(self, dir):
             if dir == self.Directions.RIGHT:
                 if self._active_window == 1:
                     return self._set_active_window(self._active_window + 1)
@@ -171,16 +177,15 @@ class WindowsManager():
                 if self._active_window == 2:
                     return self._set_active_window(self._active_window - 1)
 
-        def three(self, dir):
+        def handle_three(self, dir):
             if dir == self.Directions.RIGHT:
-                if self._active_window < 2:
-                    self._active_window += 1
+                if self._active_window < 3:
                     return self._set_active_window(self._active_window + 1)
             elif dir == self.Directions.LEFT:
                 if self._active_window > 0:
                     return self._set_active_window(self._active_window - 1)
 
-        def four(self, dir):
+        def handle_four(self, dir):
             if dir == self.Directions.RIGHT:
                 if self._active_window == 1 or self._active_window == 3:
                     return self._set_active_window(self._active_window + 1)
@@ -188,42 +193,42 @@ class WindowsManager():
                 if self._active_window == 2 or self._active_window == 4:
                     return self._set_active_window(self._active_window - 1)
             if dir == self.Directions.UP:
-                if self._active_window == 1 or self._active_window == 2:
-                    return self._set_active_window(self._active_window + 2)
-            if dir == self.Directions.DOWN:
                 if self._active_window == 3 or self._active_window == 4:
                     return self._set_active_window(self._active_window - 2)
+            if dir == self.Directions.DOWN:
+                if self._active_window == 1 or self._active_window == 2:
+                    return self._set_active_window(self._active_window + 2)
 
         self._directional_context_give_handlers = {
-            1 : one,
-            2 : two,
-            3 : three,
-            4 : four
+            1 : handle_one,
+            2 : handle_two,
+            3 : handle_three,
+            4 : handle_four
         }
 
     def give_context_up(self):
         directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
         res = directional_context_give_func(self, self.Directions.UP)
         if res != None:
-            self.refresh_all
+            self._refresh_all()
 
     def give_context_down(self):
         directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
         res = directional_context_give_func(self, self.Directions.DOWN)
         if res != None:
-            self.refresh_all
+            self._refresh_all()
 
     def give_context_left(self):
         directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
         res = directional_context_give_func(self, self.Directions.LEFT)
         if res != None:
-            self.refresh_all
+            self._refresh_all()
 
     def give_context_right(self):
         directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
         res = directional_context_give_func(self, self.Directions.RIGHT)
         if res != None:
-            self.refresh_all
+            self._refresh_all()
 
 # make this big so everyone knows it's a singleton
 WIN_MANAGER = WindowsManager(win_id_vis=True)
@@ -252,6 +257,7 @@ def draw_menu(stdscr):
     WIN_MANAGER.add_window()
 
     init_colors() 
+    curses.curs_set(0)
 
     # # Loop where k is the last character pressed
     while (k != CTL_Q):
