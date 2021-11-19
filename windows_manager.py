@@ -47,6 +47,7 @@ class WindowsManager():
                 self._windows[window].refresh(header_highlight_vis=True)
             else:
                 self._windows[window].refresh()
+            self._windows[window].start_serial()
 
     def _configure_windows(self, n):
         def one():

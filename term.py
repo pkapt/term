@@ -3,8 +3,6 @@ from windows_manager import WindowsManager
 from curses_string import CursesString
 import const
 
-
-
 STATUS_BAR_STR = "EXIT -> ctl+q | NEW WIN -> ctl+n | DEL WIN -> ctl+w | EDIT CONFIG -> ctl+g"
 
 # make this big so everyone knows it's a singleton

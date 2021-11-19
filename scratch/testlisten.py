@@ -3,7 +3,7 @@ import time
 import threading
 from multiprocessing.connection import Client
 
-address = ('localhost', 6000)
+address = ('localhost', 6001)
 authkey = b'password'
 listener = listen.BackgroundListener(address, authkey)
 listener.start()
