@@ -12,6 +12,8 @@ class Window():
         self.id = id
         self._win_id_vis = win_id_vis
         self.ser = SerialConnection(self.id, 'COM1', 115200)
+        self._serial_listener = None
+        self._kill_listener_thread = False
         self.refresh()
     
     def resize(self, lines, cols, y, x):
@@ -30,13 +32,22 @@ class Window():
         self.win.refresh()
     
     def start_serial(self):
-        self.ser.start()
-        self._serial_listener = threading.Thread(target=self._listen, daemon=True)
-        self._serial_listener.start()
+        if self.ser.is_running == False:
+            self.ser.start()
+        if self._serial_listener == None:
+            self._serial_listener = threading.Thread(target=self._listen, daemon=True)
+            self._serial_listener.start()
+    
+    def stop_serial(self):
+        self._kill_listener_thread = True
+        self.ser.close()
+        self.ser = None
     
     def _listen(self):
         with Client(self.ser.address, authkey=self.ser.authkey) as conn:
             while True:
+                if self._kill_listener_thread == True:
+                    break
                 try:
                     bytes = conn.recv_bytes().decode('utf-8')
                     CursesString(self.win, bytes, const.COLOR_CY_BL, 2, 2, -1)

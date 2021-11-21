@@ -38,18 +38,20 @@ class WindowsManager():
         if len(self._windows) > 1:
             if self._active_window > 1 and self._active_window == len(self._windows):
                 self._active_window -= 1
-            self._windows.popitem()
-            self._configure_windows(len(self._windows))
+            self._configure_windows(len(self._windows) - 1)
 
-    def _refresh_all(self):
-        for window in self._windows:
-            if self._active_window == self._windows[window].id:
-                self._windows[window].refresh(header_highlight_vis=True)
-            else:
-                self._windows[window].refresh()
-            self._windows[window].start_serial()
+
 
     def _configure_windows(self, n):
+        def kill_inactive_windows(n):
+            for i in range(n+1,self.MAX_WINDOWS+1):
+                try:
+                    self._windows[i].stop_serial()
+                    del self._windows[i]
+                    # self._windows.popitem()
+                except KeyError:
+                    pass
+
         def one():
             self._windows[1] = self._windows[1].resize(self._height, self._width, 0, 0)
 
@@ -84,7 +86,19 @@ class WindowsManager():
         if callable(handler_func):
             self.stdscr.clear()
             handler_func()
+            kill_inactive_windows(n)
             self._refresh_all()
+
+    def _refresh_all(self):
+        for window in self._windows:
+            if self._active_window == self._windows[window].id:
+                self._windows[window].refresh(header_highlight_vis=True)
+            else:
+                self._windows[window].refresh()
+            self._windows[window].start_serial()
+    
+    def _kill_inactive_windows(self):
+        pass
 
     class Directions(Enum):
         UP = 1,

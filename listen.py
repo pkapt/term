@@ -39,6 +39,12 @@ class BackgroundListener(Listener):
                 # Client has disconnected - just reset it to wait for a new
                 # one.
                 self._conn = None
+            except ConnectionResetError:
+                # [WinError 10054] An existing connection was forcibly closed by the remote host
+                break
+            except ConnectionAbortedError:
+                # [WinError 10053] An established connection was aborted by the software in your host machine
+                break
 
     @property
     def is_connected(self):
