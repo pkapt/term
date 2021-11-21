@@ -14,17 +14,26 @@ class Window():
         self.ser = SerialConnection(self.id, 'COM1', 115200)
         self._serial_listener = None
         self._kill_listener_thread = False
+        self._is_active_context = False
         self.refresh()
+
+    @property
+    def is_active_context(self):
+        return self._is_active_context
+    
+    @is_active_context.setter
+    def is_active_context(self, val):
+        self._is_active_context = val
     
     def resize(self, lines, cols, y, x):
         self.win = self.stdscr.subwin(lines, cols, y, x)
         return self
         
     # TODO clean up string show logic somehow instead of just a rogue if statement
-    def refresh(self, header_highlight_vis=False):
+    def refresh(self):
         self.win.box()
         if self._win_id_vis == True:
-            if header_highlight_vis == True:
+            if self._is_active_context == True:
                 CursesString(self.win, str(self.id), const.COLOR_BL_WH, 1, 1, -1)
             else:
                 CursesString(self.win, str(self.id), const.COLOR_CY_BL, 1, 1, -1)

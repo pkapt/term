@@ -40,7 +40,7 @@ def draw_menu(stdscr):
 
         CursesString(stdscr, text = STATUS_BAR_STR, color = const.COLOR_BL_WH, x = 0, y = -1, fill = -1)
 
-        curses.beep()
+        # curses.beep()
 
         k = stdscr.getch()
 
