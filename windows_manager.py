@@ -3,6 +3,12 @@ import const
 from window import Window
 from enum import Enum
 
+class Directions(Enum):
+    UP = 1,
+    DOWN = 2,
+    LEFT = 3,
+    RIGHT = 4
+
 class WindowsManager():
     '''
     @descr Manages adding/remove windows. Manages handling context to pipe inputs to the correct screen
@@ -41,6 +47,29 @@ class WindowsManager():
             self._configure_windows(len(self._windows) - 1)
 
 
+    def give_context_up(self):
+        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
+        res = directional_context_give_func(self, Directions.UP)
+        if res != None:
+            self._refresh_all()
+
+    def give_context_down(self):
+        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
+        res = directional_context_give_func(self, Directions.DOWN)
+        if res != None:
+            self._refresh_all()
+
+    def give_context_left(self):
+        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
+        res = directional_context_give_func(self, Directions.LEFT)
+        if res != None:
+            self._refresh_all()
+
+    def give_context_right(self):
+        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
+        res = directional_context_give_func(self, Directions.RIGHT)
+        if res != None:
+            self._refresh_all()
 
     def _configure_windows(self, n):
         def kill_inactive_windows(n):
@@ -99,12 +128,6 @@ class WindowsManager():
     
     def _kill_inactive_windows(self):
         pass
-
-    class Directions(Enum):
-        UP = 1,
-        DOWN = 2,
-        LEFT = 3,
-        RIGHT = 4
     
     def _set_active_window(self, win_id):
         self._active_window = win_id
@@ -118,32 +141,32 @@ class WindowsManager():
             pass
                 
         def handle_two(self, dir):
-            if dir == self.Directions.RIGHT:
+            if dir == Directions.RIGHT:
                 if self._active_window == 1:
                     return self._set_active_window(self._active_window + 1)
-            elif dir == self.Directions.LEFT:
+            elif dir == Directions.LEFT:
                 if self._active_window == 2:
                     return self._set_active_window(self._active_window - 1)
 
         def handle_three(self, dir):
-            if dir == self.Directions.RIGHT:
+            if dir == Directions.RIGHT:
                 if self._active_window < 3:
                     return self._set_active_window(self._active_window + 1)
-            elif dir == self.Directions.LEFT:
+            elif dir == Directions.LEFT:
                 if self._active_window > 1:
                     return self._set_active_window(self._active_window - 1)
 
         def handle_four(self, dir):
-            if dir == self.Directions.RIGHT:
+            if dir == Directions.RIGHT:
                 if self._active_window == 1 or self._active_window == 3:
                     return self._set_active_window(self._active_window + 1)
-            elif dir == self.Directions.LEFT:
+            elif dir == Directions.LEFT:
                 if self._active_window == 2 or self._active_window == 4:
                     return self._set_active_window(self._active_window - 1)
-            if dir == self.Directions.UP:
+            if dir == Directions.UP:
                 if self._active_window == 3 or self._active_window == 4:
                     return self._set_active_window(self._active_window - 2)
-            if dir == self.Directions.DOWN:
+            if dir == Directions.DOWN:
                 if self._active_window == 1 or self._active_window == 2:
                     return self._set_active_window(self._active_window + 2)
 
@@ -153,27 +176,3 @@ class WindowsManager():
             3 : handle_three,
             4 : handle_four
         }
-
-    def give_context_up(self):
-        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
-        res = directional_context_give_func(self, self.Directions.UP)
-        if res != None:
-            self._refresh_all()
-
-    def give_context_down(self):
-        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
-        res = directional_context_give_func(self, self.Directions.DOWN)
-        if res != None:
-            self._refresh_all()
-
-    def give_context_left(self):
-        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
-        res = directional_context_give_func(self, self.Directions.LEFT)
-        if res != None:
-            self._refresh_all()
-
-    def give_context_right(self):
-        directional_context_give_func = self._directional_context_give_handlers[len(self._windows)]
-        res = directional_context_give_func(self, self.Directions.RIGHT)
-        if res != None:
-            self._refresh_all()

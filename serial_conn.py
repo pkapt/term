@@ -25,6 +25,10 @@ class SerialConnection:
     @property
     def is_running(self):
         return (self._ser_listener_thread != None) and (self._ser_listener_thread.is_alive())
+    
+    @property
+    def is_connected(self):
+        return False
 
     #TODO make this actually get serial output instead of this dummy stuff
     def _get_serial_output(self):

@@ -3,6 +3,7 @@ from curses_string import CursesString
 from serial_conn import SerialConnection
 from multiprocessing.connection import Client
 import threading
+from text_field_input import FieldInput
 
 class Window():
     # TODO: add handling for port
@@ -25,11 +26,21 @@ class Window():
         self.win.box()
         if self._win_id_vis == True:
             if header_highlight_vis == True:
-                CursesString(self.win, str(self.id), const.COLOR_BL_WH, 1, 1, -1)
+                self._show_win_header()
             else:
-                CursesString(self.win, str(self.id), const.COLOR_CY_BL, 1, 1, -1)
+                self._hide_win_header()
+
+        # if not self.is_connected():
+        #     # draw a menu
+        #     self._draw_serial_config_entry_widget()
         self.win.touchwin()
         self.win.refresh()
+    
+    def _show_win_header(self):
+        CursesString(self.win, str(self.id), const.COLOR_BL_WH, 1, 1, -1)
+
+    def _hide_win_header(self):
+        CursesString(self.win, str(self.id), const.COLOR_CY_BL, 1, 1, -1)
     
     def start_serial(self):
         if self.ser.is_running == False:
@@ -42,7 +53,7 @@ class Window():
         self._kill_listener_thread = True
         self.ser.close()
         self.ser = None
-    
+     
     def _listen(self):
         with Client(self.ser.address, authkey=self.ser.authkey) as conn:
             while True:
@@ -58,3 +69,11 @@ class Window():
                 except EOFError:
                     print('Connection lost - exiting.')
                     break
+
+    def _draw_serial_config_entry_widget(self):
+        field_input_config = {
+            "Port" : str,
+            "Baud" : int
+        }
+        ser_data_getter = FieldInput(self.stdscr, field_input_config)
+        FieldInput.show()
